@@ -52,7 +52,7 @@ const AIChat = ({ cartItems }) => {
           { role: 'system', content: systemPrompt },
           ...newMessages.map(m => ({ role: m.role, content: m.content }))
         ],
-        model: 'mixtral-8x7b-32768', // Excellent fast model on Groq
+        model: 'llama-3.1-8b-instant', // Fast available Groq model
       });
 
       const reply = completion.choices[0]?.message?.content || "Sorry, I didn't get that.";
