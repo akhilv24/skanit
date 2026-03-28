@@ -2,10 +2,17 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 2rem 1rem;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-dark);
   color: #fff;
+  padding-bottom: 80px; /* Space for bottom nav */
+}
+
+.main-content-area {
+  flex: 1;
+  width: 100%;
+  padding: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .notification {
@@ -35,103 +42,90 @@
   color: white;
 }
 
-.app-header {
+.app-header.small-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.app-header h1 {
-  font-size: 2.5rem;
+.app-header.small-header h1 {
+  font-size: 1.8rem;
   margin: 0;
   background: linear-gradient(135deg, #00C6FF, #0072FF);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.app-header p {
+.app-header.small-header p {
   color: rgba(255, 255, 255, 0.6);
-  font-size: 1.1rem;
-  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
 }
 
-.main-content {
+.tab-view {
   width: 100%;
-  max-width: 800px;
+}
+
+.empty-state {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+
+.empty-state h2 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
 }
 
 .test-barcodes {
-  margin-top: 3rem;
-  width: 100%;
-  max-width: 500px;
+  margin-top: 2rem;
   background: rgba(255, 255, 255, 0.05);
-  padding: 1.5rem;
-  border-radius: 15px;
+  padding: 1rem;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
 }
 
 .test-barcodes h3 {
   color: #00C6FF;
-  margin-top: 0;
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.5rem 0;
 }
 
 .test-barcodes p {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 1rem;
-}
-
-.test-barcodes ul {
-  list-style: none;
-  padding: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
   margin: 0;
 }
 
-.test-barcodes li {
-  background: rgba(0, 0, 0, 0.2);
-  padding: 0.75rem;
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
-  font-family: monospace;
-  font-size: 1.1rem;
-}
-
-.test-barcodes strong {
-  color: #fff;
-}
-
 @keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (min-width: 768px) {
-  .main-content {
-    flex-direction: row;
-    align-items: flex-start;
-  }
-  .scanner-container {
-    flex: 1;
-    position: sticky;
-    top: 2rem;
-  }
-  .cart-container {
-    flex: 1;
+  .app-container {
+    padding-bottom: 0; /* No bottom nav on big screens usually, but we are keeping it for unified design */
   }
 }
