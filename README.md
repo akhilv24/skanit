@@ -1,16 +1,118 @@
-# React + Vite
+# ⬡ Skanit — Price Comparison App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> **Find the best price, every time.**
 
-Currently, two official plugins are available:
+Skanit is a mobile-first price comparison and product discovery app. Scan any product barcode or search by name to instantly compare prices across multiple retailers, track price history, and get AI-powered shopping advice.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+![Skanit App](https://img.shields.io/badge/Built%20with-React%20%2B%20Vite-6C63FF?style=flat-square&logo=react)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Features
 
-## Expanding the ESLint configuration
+| Feature | Description |
+|---|---|
+| 🔍 **Product Search** | Search any product by name and get instant results |
+| 📷 **Barcode Scanner** | Scan EAN/UPC/QR codes with your camera to look up products |
+| 🏪 **Price Comparison** | See prices across Amazon, Walmart, Target, Best Buy & more |
+| 📈 **Price History Chart** | SVG sparkline chart showing 12-month price fluctuation |
+| ❤️ **Watchlist** | Save products and track price drops (localStorage persisted) |
+| 🤖 **Skanit AI** | Groq-powered shopping advisor — ask "Is the MacBook Air M4 worth it?" |
+| ✨ **AI SmartReview** | AI-generated pros & cons summary for any product |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- A [Groq API key](https://console.groq.com) (free)
+
+### Installation
+
+```bash
+git clone https://github.com/YOUR_USERNAME/skanit.git
+cd skanit
+npm install
+```
+
+### Environment Setup
+
+Copy `.env.example` to `.env` and add your Groq API key:
+
+```bash
+cp .env.example .env
+```
+
+```env
+VITE_GROQ_API_KEY=your_groq_api_key_here
+```
+
+### Run Locally
+
+```bash
+npm run dev
+```
+
+Open [https://localhost:5173](https://localhost:5173) in your browser.
+
+> **Note:** The app uses HTTPS via `@vitejs/plugin-basic-ssl`. Accept the self-signed certificate warning in your browser on first launch.
+
+For mobile access on the same network:
+```bash
+npm run dev -- --host
+```
+
+---
+
+## 🛠️ Tech Stack
+
+- **React 19** + **Vite 8** — Fast development & HMR
+- **Groq SDK** — AI chat & SmartReview (llama-3.1-8b-instant)
+- **html5-qrcode** — Camera barcode/QR scanning
+- **lucide-react** — Icon library
+- **Vanilla CSS** — Custom design system with glassmorphism
+
+---
+
+## 📱 App Structure
+
+```
+src/
+├── components/
+│   ├── Home.jsx          # Landing page with search & deals
+│   ├── Scanner.jsx       # Barcode camera scanner
+│   ├── ProductPage.jsx   # Price comparison + AI SmartReview
+│   ├── Watchlist.jsx     # Saved products tracker
+│   ├── AIChat.jsx        # Skanit AI shopping advisor
+│   └── BottomNav.jsx     # Navigation bar
+├── data/
+│   └── mockProducts.js   # Product DB + retailer price generator
+├── App.jsx               # Root app with routing state
+└── index.css             # Global design system
+```
+
+---
+
+## 🌐 External APIs Used
+
+| API | Purpose | Tier |
+|---|---|---|
+| [OpenFoodFacts](https://world.openfoodfacts.org/api) | Food product lookup by barcode | Free |
+| [UPCItemDB](https://www.upcitemdb.com/api/explore) | General product lookup by barcode | Free (100/day) |
+| [Groq](https://console.groq.com) | AI chat & review summaries | Free tier |
+
+---
+
+## 🔐 Environment Variables
+
+| Variable | Description | Required |
+|---|---|---|
+| `VITE_GROQ_API_KEY` | Your Groq API key for AI features | Yes |
+
+---
+
+## 📄 License
+
+MIT © Akhil

@@ -1,168 +1,269 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import Scanner from './components/Scanner';
-import Cart from './components/Cart';
+import Home from './components/Home';
+import ProductPage from './components/ProductPage';
+import Watchlist from './components/Watchlist';
 import AIChat from './components/AIChat';
 import BottomNav from './components/BottomNav';
-import { getProductByBarcode } from './data/mockProducts';
-import { PackageOpen, AlertCircle, Clock, Info } from 'lucide-react';
+import { getProductByBarcode, generateRetailerPrices, generatePriceHistory } from './data/mockProducts';
+import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 import './App.css';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('scan');
-  const [cartItems, setCartItems] = useState([]);
+  const [activeTab, setActiveTab] = useState('home');
   const [notification, setNotification] = useState(null);
-  const [isSearchingApi, setIsSearchingApi] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
+  const [watchlist, setWatchlist] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('skanit_watchlist') || '[]'); }
+    catch { return []; }
+  });
+  const [isSearching, setIsSearching] = useState(false);
 
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
+    setTimeout(() => setNotification(null), 3500);
   };
 
-  const handleScanSuccess = async (barcode) => {
-    if (isSearchingApi) return; // Prevent spam scanning the same item
-    setIsSearchingApi(true);
+  const buildProductData = (raw, barcode) => {
+    const base = raw.lowestPrice || raw.price || 29.99;
+    const prices = generateRetailerPrices(base, barcode || raw.id || '000000');
+    const history = raw.priceHistory
+      ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => ({ month: m, price: raw.priceHistory[i] || base }))
+      : generatePriceHistory(base, barcode || '000000');
+    return { ...raw, retailerPrices: prices, priceHistory: history, lowestPrice: prices[0]?.price || base };
+  };
+
+  const handleSearch = useCallback(async (query) => {
+    if (!query.trim() || isSearching) return;
+    setIsSearching(true);
+    showNotification('Searching...', 'info');
 
     try {
-      let product = getProductByBarcode(barcode); // Check mockDB first
+      // First check mock DB
+      const mockResult = Object.values(await import('./data/mockProducts.js').then(m => m.mockProducts))
+        .find(p => p.name.toLowerCase().includes(query.toLowerCase()));
 
-      if (!product) {
-        showNotification(`Searching internet databases...`, 'info');
-        
-        // 1. Try OpenFoodFacts
+      if (mockResult) {
+        setCurrentProduct(buildProductData(mockResult, mockResult.id));
+        setActiveTab('product');
+        return;
+      }
+
+      // Try UPCItemDB with search
+      const res = await fetch(`https://api.upcitemdb.com/prod/trial/search?s=${encodeURIComponent(query)}&type=product`);
+      const data = await res.json();
+
+      if (data.items && data.items.length > 0) {
+        const item = data.items[0];
+        const barcode = item.upc || item.ean || '000000000000';
+        const raw = {
+          id: barcode,
+          name: item.title,
+          brand: item.brand || 'Unknown',
+          category: item.category || 'General',
+          image: '📦',
+          rating: 4.0 + (parseInt(barcode.slice(-1)) % 10) / 10,
+          reviewCount: 100 + parseInt(barcode.slice(-3)),
+          description: item.description || '',
+          lowestPrice: item.lowest_recorded_price || 19.99,
+          originalPrice: item.highest_recorded_price || 29.99,
+          tags: [],
+        };
+        setCurrentProduct(buildProductData(raw, barcode));
+        setActiveTab('product');
+      } else {
+        showNotification('No products found. Try a different search.', 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      showNotification('Search failed. Check your connection.', 'error');
+    } finally {
+      setIsSearching(false);
+    }
+  }, [isSearching]);
+
+  const handleScanSuccess = useCallback(async (barcode) => {
+    if (isSearching) return;
+    setIsSearching(true);
+    showNotification('Looking up product...', 'info');
+
+    try {
+      let raw = getProductByBarcode(barcode);
+
+      if (!raw) {
+        // Try OpenFoodFacts
         try {
           const offRes = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
           const offData = await offRes.json();
           if (offData.status === 1 && offData.product) {
-            product = {
-              name: offData.product.product_name || offData.product.generic_name || "Food Product",
+            raw = {
+              id: barcode,
+              name: offData.product.product_name || offData.product.generic_name || 'Food Product',
+              brand: offData.product.brands || 'Unknown',
               category: 'Grocery',
-              image: "🛒"
+              image: '🛒',
+              rating: 3.8 + (parseInt(barcode.slice(-1)) % 12) / 10,
+              reviewCount: 50 + parseInt(barcode.slice(-3) || '0'),
+              description: offData.product.ingredients_text || 'No description available.',
+              lowestPrice: null,
+              tags: ['food', 'grocery'],
             };
           }
-        } catch(e) { console.error("OFF API Error", e); }
+        } catch (e) { console.error(e); }
 
-        // 2. Try UPCItemDB if not found in openfoodfacts
-        if (!product) {
+        // Try UPCItemDB
+        if (!raw) {
           try {
-             // Free tier trial endpoint limit 100/day
-             const upcRes = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
-             const upcData = await upcRes.json();
-             if (upcData.items && upcData.items.length > 0) {
-               product = {
-                 name: upcData.items[0].title,
-                 category: 'General',
-                 image: "📦"
-               };
-             }
-          } catch(e) { console.error("UPCItemDB Error", e); }
+            const upcRes = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
+            const upcData = await upcRes.json();
+            if (upcData.items && upcData.items.length > 0) {
+              const item = upcData.items[0];
+              raw = {
+                id: barcode,
+                name: item.title,
+                brand: item.brand || 'Unknown',
+                category: item.category || 'General',
+                image: '📦',
+                rating: 4.0 + (parseInt(barcode.slice(-1)) % 10) / 10,
+                reviewCount: 100 + parseInt(barcode.slice(-3)),
+                description: item.description || '',
+                lowestPrice: item.lowest_recorded_price || null,
+                originalPrice: item.highest_recorded_price || null,
+                tags: [],
+              };
+            }
+          } catch (e) { console.error(e); }
         }
 
-        // 3. Fallback Unknown Item
-        if (!product) {
-          product = {
-             name: `Unknown Item (Barcode: ${barcode})`,
-             category: 'Unknown',
-             image: "❓"
+        // Fallback
+        if (!raw) {
+          const numPart = parseInt(barcode.replace(/\D/g, '').slice(-4)) || 1234;
+          raw = {
+            id: barcode,
+            name: `Unknown Product`,
+            brand: 'Unknown',
+            category: 'General',
+            image: '❓',
+            rating: 3.5,
+            reviewCount: 0,
+            description: `Barcode: ${barcode}`,
+            lowestPrice: (numPart % 2000) / 100 + 4.99,
+            tags: [],
           };
         }
-
-        // Generate reliable deterministic price based on the barcode string digits
-        const numPart = parseInt(barcode.replace(/\D/g, '').slice(-4)) || 1234;
-        product.price = (numPart % 2000) / 100 + 1.99; // Results in $1.99 to $21.99
       }
 
-      setCartItems((prevItems) => {
-        const itemIndex = prevItems.findIndex((item) => item.id === barcode);
-        if (itemIndex > -1) {
-          const updatedItems = [...prevItems];
-          updatedItems[itemIndex].quantity += 1;
-          showNotification(`Added another to bill!`, 'success');
-          return updatedItems;
-        } else {
-          showNotification(`Added ${product.name}!`, 'success');
-          return [...prevItems, { id: barcode, ...product, quantity: 1 }];
-        }
-      });
-      
+      if (!raw.lowestPrice) {
+        const numPart = parseInt(barcode.replace(/\D/g, '').slice(-4)) || 1234;
+        raw.lowestPrice = (numPart % 5000) / 100 + 9.99;
+      }
+
+      setCurrentProduct(buildProductData(raw, barcode));
+      setActiveTab('product');
     } finally {
-      setIsSearchingApi(false);
+      setIsSearching(false);
     }
+  }, [isSearching]);
+
+  const toggleWatchlist = (product) => {
+    setWatchlist(prev => {
+      const exists = prev.find(p => p.id === product.id);
+      let updated;
+      if (exists) {
+        updated = prev.filter(p => p.id !== product.id);
+        showNotification('Removed from Watchlist', 'info');
+      } else {
+        updated = [...prev, { ...product, addedAt: Date.now() }];
+        showNotification('Added to Watchlist! 🔔', 'success');
+      }
+      localStorage.setItem('skanit_watchlist', JSON.stringify(updated));
+      return updated;
+    });
   };
 
-  const updateQuantity = (id, newQuantity) => {
-    if (newQuantity < 1) return;
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
-
-  const removeItem = (id) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
-  };
-
-  const handleCheckout = () => {
-    if (cartItems.length === 0) return;
-    alert("Checkout functionality would be integrated here!");
-    setCartItems([]);
-    showNotification("Bill generated successfully!", 'success');
-  };
+  const isInWatchlist = (productId) => watchlist.some(p => p.id === productId);
 
   return (
-    <div className="app-container">
+    <div className="app-root">
+      {/* Notification Toast */}
       {notification && (
-        <div className={`notification ${notification.type}`}>
-          {notification.type === 'error' && <AlertCircle size={20} />}
-          {notification.type === 'success' && <PackageOpen size={20} />}
-          {notification.type === 'info' && <Info size={20} />}
+        <div className={`toast toast--${notification.type}`}>
+          <span className="toast__icon">
+            {notification.type === 'success' && <CheckCircle size={17} />}
+            {notification.type === 'error' && <AlertCircle size={17} />}
+            {notification.type === 'info' && <Info size={17} />}
+          </span>
           <span>{notification.message}</span>
+          <button className="toast__close" onClick={() => setNotification(null)}><X size={14} /></button>
         </div>
       )}
 
-      {/* Main Content Area based on Tabs */}
-      <main className="main-content-area">
-        {activeTab === 'scan' && (
-          <div className="tab-view slide-in">
-            <header className="app-header small-header">
-              <h1>Scan Item</h1>
-              <p>Align barcode to add to bill</p>
-            </header>
-            <Scanner onScanSuccess={handleScanSuccess} />
-            <div className="test-barcodes mobile-hidden">
-              <h3>Test Barcodes</h3>
-              <p>Type in generator: 1234567890128, 9876543210987</p>
-            </div>
+      <main className="app-main">
+        {activeTab === 'home' && (
+          <div className="view-slide-up">
+            <Home
+              onSearch={handleSearch}
+              onProductSelect={(product) => {
+                setCurrentProduct(buildProductData(product, product.id));
+                setActiveTab('product');
+              }}
+              isSearching={isSearching}
+            />
           </div>
         )}
 
-        {activeTab === 'cart' && (
-          <div className="tab-view slide-in">
-            <Cart
-              items={cartItems}
-              onUpdateQuantity={updateQuantity}
-              onRemove={removeItem}
-              onCheckout={handleCheckout}
+        {activeTab === 'scan' && (
+          <div className="view-slide-up">
+            <Scanner onScanSuccess={handleScanSuccess} isSearching={isSearching} />
+          </div>
+        )}
+
+        {activeTab === 'product' && currentProduct && (
+          <div className="view-pop-in">
+            <ProductPage
+              product={currentProduct}
+              isInWatchlist={isInWatchlist(currentProduct.id)}
+              onToggleWatchlist={() => toggleWatchlist(currentProduct)}
+              onBack={() => setActiveTab('home')}
+            />
+          </div>
+        )}
+
+        {activeTab === 'watchlist' && (
+          <div className="view-slide-up">
+            <Watchlist
+              items={watchlist}
+              onRemove={(id) => {
+                setWatchlist(prev => {
+                  const updated = prev.filter(p => p.id !== id);
+                  localStorage.setItem('skanit_watchlist', JSON.stringify(updated));
+                  return updated;
+                });
+                showNotification('Removed from Watchlist', 'info');
+              }}
+              onProductSelect={(product) => {
+                setCurrentProduct(buildProductData(product, product.id));
+                setActiveTab('product');
+              }}
             />
           </div>
         )}
 
         {activeTab === 'chat' && (
-          <div className="tab-view fade-in">
-            <AIChat cartItems={cartItems} />
-          </div>
-        )}
-
-        {activeTab === 'history' && (
-          <div className="tab-view empty-state fade-in">
-            <Clock size={48} color="rgba(255,255,255,0.3)" />
-            <h2>No History Yet</h2>
-            <p>Your generated bills will appear here.</p>
+          <div className="view-slide-up">
+            <AIChat />
           </div>
         )}
       </main>
 
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          if (tab !== 'product') setActiveTab(tab);
+          else setActiveTab(tab);
+        }}
+        watchlistCount={watchlist.length}
+      />
     </div>
   );
 }

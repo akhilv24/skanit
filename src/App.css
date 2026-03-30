@@ -1,137 +1,72 @@
-.app-container {
+.app-root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-dark);
-  color: #fff;
-  padding-bottom: 80px; /* Space for bottom nav */
+  position: relative;
 }
 
-.main-content-area {
+.app-main {
   flex: 1;
   width: 100%;
-  padding: 1rem;
-  max-width: 800px;
+  max-width: 480px;
   margin: 0 auto;
+  padding-bottom: 80px;
+  position: relative;
 }
 
-.notification {
+/* ─── View Transitions ─── */
+.view-slide-up {
+  animation: fadeSlideUp 0.35s var(--ease-smooth) both;
+}
+.view-pop-in {
+  animation: popIn 0.3s var(--ease-spring) both;
+}
+
+/* ─── Toast ─── */
+.toast {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-  z-index: 1000;
-  animation: slideInRight 0.3s ease-out;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: var(--radius-pill);
+  font-size: 0.875rem;
   font-weight: 500;
+  z-index: 9999;
+  animation: fadeSlideUp 0.3s var(--ease-spring) both;
+  white-space: nowrap;
+  max-width: 90vw;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(16px);
 }
 
-.notification.success {
-  background: rgba(46, 204, 113, 0.9);
-  border: 1px solid rgba(46, 204, 113, 1);
-  color: white;
+.toast--success {
+  background: rgba(67, 233, 123, 0.15);
+  border: 1px solid rgba(67, 233, 123, 0.4);
+  color: #43E97B;
+}
+.toast--error {
+  background: rgba(255, 101, 132, 0.15);
+  border: 1px solid rgba(255, 101, 132, 0.4);
+  color: #FF6584;
+}
+.toast--info {
+  background: rgba(108, 99, 255, 0.15);
+  border: 1px solid rgba(108, 99, 255, 0.4);
+  color: #6C63FF;
 }
 
-.notification.error {
-  background: rgba(231, 76, 60, 0.9);
-  border: 1px solid rgba(231, 76, 60, 1);
-  color: white;
-}
-
-.notification.info {
-  background: rgba(52, 152, 219, 0.9);
-  border: 1px solid rgba(52, 152, 219, 1);
-  color: white;
-}
-
-.app-header.small-header {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.app-header.small-header h1 {
-  font-size: 1.8rem;
-  margin: 0;
-  background: linear-gradient(135deg, #00C6FF, #0072FF);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.app-header.small-header p {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.9rem;
-  margin-top: 0.25rem;
-}
-
-.tab-view {
-  width: 100%;
-}
-
-.empty-state {
+.toast__icon { display: flex; align-items: center; }
+.toast__close {
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+  margin-left: 4px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  height: 60vh;
-  color: rgba(255, 255, 255, 0.5);
-  text-align: center;
+  transition: opacity 0.2s;
 }
-
-.empty-state h2 {
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.slide-in {
-  animation: slideIn 0.3s ease-out;
-}
-
-.fade-in {
-  animation: fadeIn 0.3s ease-out;
-}
-
-.test-barcodes {
-  margin-top: 2rem;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  text-align: center;
-}
-
-.test-barcodes h3 {
-  color: #00C6FF;
-  margin: 0 0 0.5rem 0;
-}
-
-.test-barcodes p {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 0;
-}
-
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(50px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@media (min-width: 768px) {
-  .app-container {
-    padding-bottom: 0; /* No bottom nav on big screens usually, but we are keeping it for unified design */
-  }
-}
+.toast__close:hover { opacity: 1; }

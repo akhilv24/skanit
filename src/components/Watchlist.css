@@ -1,0 +1,194 @@
+.watchlist {
+  padding: 0 0 1rem;
+}
+
+.watchlist__header {
+  padding: 1.5rem 1.25rem 0.75rem;
+}
+
+.watchlist__title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: var(--grad-hot);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 2px;
+}
+
+.watchlist__subtitle {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.watchlist__notice {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 1.25rem 1rem;
+  padding: 9px 14px;
+  background: rgba(247, 201, 72, 0.08);
+  border: 1px solid rgba(247, 201, 72, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  color: #F7C948;
+}
+
+/* ─── Empty ─── */
+.watchlist-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 55vh;
+  text-align: center;
+  padding: 2rem;
+}
+
+.watchlist-empty__icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 101, 132, 0.1);
+  border: 1px solid rgba(255, 101, 132, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 101, 132, 0.5);
+  margin-bottom: 1.25rem;
+}
+
+.watchlist-empty h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.watchlist-empty p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  max-width: 240px;
+  line-height: 1.5;
+}
+
+/* ─── List ─── */
+.watchlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 1.25rem;
+}
+
+.watch-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  text-align: left;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  width: 100%;
+}
+
+.watch-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-glow);
+  transform: translateY(-1px);
+}
+
+.watch-card__img {
+  font-size: 2rem;
+  width: 52px;
+  height: 52px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.watch-card__info { flex: 1; min-width: 0; }
+
+.watch-card__brand {
+  font-size: 0.67rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.watch-card__name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 5px;
+}
+
+.watch-card__price-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.watch-card__price {
+  font-size: 1rem;
+  font-weight: 700;
+  background: var(--grad-green);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-family: 'Outfit', sans-serif;
+}
+
+.watch-card__drop {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255,101,132,0.12);
+  border: 1px solid rgba(255,101,132,0.25);
+  color: #FF6584;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+}
+
+.watch-card__stores {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.watch-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.watch-card__remove {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  background: rgba(255,101,132,0.1);
+  border: 1px solid rgba(255,101,132,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.15s;
+}
+.watch-card__remove:hover { background: rgba(255,101,132,0.2); transform: scale(1.1); }
+
+.watch-card__heart { color: #FF6584; }
+.watch-card__arrow { color: var(--text-muted); }

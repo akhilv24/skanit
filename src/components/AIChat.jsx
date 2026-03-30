@@ -1,116 +1,175 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Groq from 'groq-sdk';
-import { Send, Bot, User, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Trash2, Sparkles } from 'lucide-react';
 import './AIChat.css';
 
-// Initialize Groq. Warning: Exposing API keys in React apps directly is not safe for production,
-// but works fine for personal/testing use.
 const groq = new Groq({
-  apiKey: import.meta.env.VITE_GROQ_API_KEY || "dummy", 
-  dangerouslyAllowBrowser: true 
+  apiKey: import.meta.env.VITE_GROQ_API_KEY || 'dummy',
+  dangerouslyAllowBrowser: true,
 });
 
-const AIChat = ({ cartItems }) => {
+const SUGGESTIONS = [
+  "Is the MacBook Air M4 worth it?",
+  "Best budget wireless earbuds?",
+  "Compare iPhone 16 vs Pixel 9",
+  "Good time to buy a 4K TV?",
+];
+
+const AIChat = () => {
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Hi! I'm your AI Shopping Assistant. Ask me anything about the products you're scanning, recipes, or price history!" }
+    { role: 'assistant', content: "Hey! 👋 I'm **Skanit AI** — your personal shopping advisor. Ask me anything: product comparisons, whether it's a good time to buy, budget picks, you name it." }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
 
-  // Auto scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-    
-    // Check if API key is missing
-    if (!import.meta.env.VITE_GROQ_API_KEY) {
-      setMessages(prev => [...prev, { role: 'user', content: input }, 
-        { role: 'assistant', content: '❌ Error: VITE_GROQ_API_KEY is not set in the .env file. Please add your key to use the AI chat.' }]);
-      setInput('');
-      return;
-    }
+  const sendMessage = async (text) => {
+    const content = text || input;
+    if (!content.trim() || isLoading) return;
 
-    const newMessages = [...messages, { role: 'user', content: input }];
+    const userMsg = { role: 'user', content };
+    const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setInput('');
     setIsLoading(true);
 
-    // Provide context of current cart items to the AI secretly behind the scenes
-    const systemPrompt = `You are a helpful smart shopping assistant in a POS/Barcode scanner app called Skanit. 
-    The user's current scanned cart items are: ${JSON.stringify(cartItems.map(i => i.name))}
-    Answer briefly, professionally, and enthusiastically.`;
+    if (!import.meta.env.VITE_GROQ_API_KEY) {
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: '⚠️ No Groq API key found. Add `VITE_GROQ_API_KEY` to your `.env` file to enable AI responses.'
+        }]);
+        setIsLoading(false);
+      }, 800);
+      return;
+    }
 
     try {
       const completion = await groq.chat.completions.create({
         messages: [
-          { role: 'system', content: systemPrompt },
+          {
+            role: 'system',
+            content: `You are Skanit AI, a sharp, friendly, and knowledgeable shopping advisor built into the Skanit price comparison app.
+Your job: help users make smart buying decisions. Be concise but insightful (2-4 short paragraphs max).
+Cover: price value, alternatives, timing ("wait for a sale" vs "buy now"), and honest trade-offs.
+Use casual, confident language. Use emojis sparingly. Never make up specific prices.`
+          },
           ...newMessages.map(m => ({ role: m.role, content: m.content }))
         ],
-        model: 'llama-3.1-8b-instant', // Fast available Groq model
+        model: 'llama-3.1-8b-instant',
       });
-
-      const reply = completion.choices[0]?.message?.content || "Sorry, I didn't get that.";
+      const reply = completion.choices[0]?.message?.content || "Sorry, I didn't get a response.";
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
-    } catch (error) {
-      console.error(error);
-      setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Sorry, there was an error processing your request. Please check your API key.' }]);
+    } catch (e) {
+      console.error(e);
+      setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Error reaching AI. Check your API key and internet connection.' }]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') handleSend();
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  };
+
+  const clearChat = () => {
+    setMessages([{ role: 'assistant', content: "Hey! 👋 I'm **Skanit AI** — your personal shopping advisor. Ask me anything!" }]);
+  };
+
+  // Render text with basic bold support (**text**)
+  const renderContent = (text) => {
+    const parts = text.split(/\*\*(.*?)\*\*/g);
+    return parts.map((part, i) =>
+      i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+    );
   };
 
   return (
-    <div className="chat-container">
-      <div className="chat-header">
-        <div className="chat-title">
-          <Bot size={24} color="#00C6FF" />
-          <h2>AI Shopping Assistant</h2>
+    <div className="aichat">
+      {/* Header */}
+      <div className="aichat__header">
+        <div className="aichat__header-left">
+          <div className="aichat__avatar">
+            <Sparkles size={16} />
+          </div>
+          <div>
+            <h2 className="aichat__title">Skanit AI</h2>
+            <p className="aichat__status">Shopping Advisor · Always Online</p>
+          </div>
         </div>
-        <button className="clear-chat" onClick={() => setMessages([{ role: 'assistant', content: "Chat cleared! How can I help?" }])}>
-          <Trash2 size={18} />
+        <button className="aichat__clear" onClick={clearChat} id="clear-chat-btn" title="Clear chat">
+          <Trash2 size={16} />
         </button>
       </div>
 
-      <div className="chat-messages" ref={scrollRef}>
+      {/* Messages */}
+      <div className="aichat__messages" ref={scrollRef}>
         {messages.map((msg, idx) => (
-          <div key={idx} className={`message-wrapper ${msg.role}`}>
-            <div className="message-bubble">
-              {msg.role === 'assistant' ? <Bot size={16} className="msg-icon" /> : <User size={16} className="msg-icon user-icon" />}
-              <p>{msg.content}</p>
+          <div key={idx} className={`msg msg--${msg.role}`}>
+            {msg.role === 'assistant' && (
+              <div className="msg__avatar"><Sparkles size={12} /></div>
+            )}
+            <div className="msg__bubble">
+              <p>{renderContent(msg.content)}</p>
             </div>
+            {msg.role === 'user' && (
+              <div className="msg__avatar msg__avatar--user"><User size={12} /></div>
+            )}
           </div>
         ))}
+
         {isLoading && (
-          <div className="message-wrapper assistant">
-            <div className="message-bubble typing">
-              <span className="dot"></span><span className="dot"></span><span className="dot"></span>
+          <div className="msg msg--assistant">
+            <div className="msg__avatar"><Sparkles size={12} /></div>
+            <div className="msg__bubble msg__bubble--typing">
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+              <span className="typing-dot" />
             </div>
           </div>
         )}
       </div>
 
-      <div className="chat-input-area">
-        <input 
-          type="text" 
-          placeholder="Ask about your products..." 
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          disabled={isLoading}
-        />
-        <button className="send-btn" onClick={handleSend} disabled={!input.trim() || isLoading}>
-          <Send size={20} />
-        </button>
+      {/* Suggestions */}
+      {messages.length <= 1 && (
+        <div className="aichat__suggestions">
+          {SUGGESTIONS.map(s => (
+            <button key={s} className="suggestion-chip" onClick={() => sendMessage(s)} id={`suggest-${s.slice(0,10).replace(/\s/g,'-')}`}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Input */}
+      <div className="aichat__input-area">
+        <div className="aichat__input-box">
+          <textarea
+            id="chat-input"
+            ref={inputRef}
+            rows={1}
+            placeholder="Ask anything about products…"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isLoading}
+          />
+          <button
+            className="aichat__send"
+            onClick={() => sendMessage()}
+            disabled={!input.trim() || isLoading}
+            id="chat-send-btn"
+          >
+            <Send size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );
